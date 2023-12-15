@@ -1,32 +1,24 @@
-
-
-Page
-1
-of 4
-# Laina Posner
-# VT, ECE 5444
-# HW 5, image stitching algorithm
-# Your code should accept a list of images,
-# find the proper geometric transformations
-# and combine them into a single resulting image.
 import os
 import cv2
 import numpy as np
+
 pathname = "/Users/laina/Documents/VT/ComputerVision/hw5/"
 os.chdir(pathname)
-filename1 = "rio1.png" # filename input options: "rio" , "blacksburg",
-"diamondhead"
+filename1 = "rio1.png" # filename input options: "rio" , "Blacksburg", "diamondhead"
 filename2 = "rio2.png"
 filename3 = "rio3.png"
 img1 = cv2.imread(filename1, 0)
 img2 = cv2.imread(filename2, 0)
 img3 = cv2.imread(filename3, 0)
+
 sift = cv2.xfeatures2d.SIFT_create()
 keypoint1, descriptor1 = sift.detectAndCompute(img1, None)
 keypoint2, descriptor2 = sift.detectAndCompute(img2, None)
+
 bf = cv2.BFMatcher()
 matches = bf.knnMatch(descriptor1,descriptor2, k=2)
 goodMatches = []
+
 for m,n in matches:
 if m.distance < 0.7 * n.distance:
 goodMatches.append(m)
@@ -34,49 +26,7 @@ sourcePoints = np.float32([keypoint2[m.trainIdx].pt for m in
 goodMatches ]).reshape(-1, 1, 2)
 destinationPoints = np.float32([keypoint1[m.queryIdx].pt for m in
 goodMatches ]).reshape(-1, 1, 2)
-# Obtain the homography matrix
-M, mask = cv2.findHomography(sourcePoints, destinationPoints, method=cv2.RANSAC,
-ransacReprojThreshold=5.0)
-print(M)
-print()
-img1x = img1.shape[1]
-img1y = img1.shape[0]
-img2x = img2.shape[1]
-img2y = img2.shape[0]
-imgright = cv2.warpPerspective(img2,M,((img1x+img2x),img1y))
-background = np.zeros(imgright.shape).astype(np.int32)
-background[0:img1y,0:img1x] = img1
-imgleft=background.copy()# Laina Posner
-# VT, ECE 5444
-# HW 5, image stitching algorithm
-# Your code should accept a list of images,
-# find the proper geometric transformations
-# and combine them into a single resulting image.
-import os
-import cv2
-import numpy as np
-pathname = "/Users/laina/Documents/VT/ComputerVision/hw5/"
-os.chdir(pathname)
-filename1 = "rio1.png" # filename input options: "rio" , "blacksburg",
-"diamondhead"
-filename2 = "rio2.png"
-filename3 = "rio3.png"
-img1 = cv2.imread(filename1, 0)
-img2 = cv2.imread(filename2, 0)
-img3 = cv2.imread(filename3, 0)
-sift = cv2.xfeatures2d.SIFT_create()
-keypoint1, descriptor1 = sift.detectAndCompute(img1, None)
-keypoint2, descriptor2 = sift.detectAndCompute(img2, None)
-bf = cv2.BFMatcher()
-matches = bf.knnMatch(descriptor1,descriptor2, k=2)
-goodMatches = []
-for m,n in matches:
-if m.distance < 0.7 * n.distance:
-goodMatches.append(m)
-sourcePoints = np.float32([keypoint2[m.trainIdx].pt for m in
-goodMatches ]).reshape(-1, 1, 2)
-destinationPoints = np.float32([keypoint1[m.queryIdx].pt for m in
-goodMatches ]).reshape(-1, 1, 2)
+
 # Obtain the homography matrix
 M, mask = cv2.findHomography(sourcePoints, destinationPoints, method=cv2.RANSAC,
 ransacReprojThreshold=5.0)
@@ -92,6 +42,7 @@ background[0:img1y,0:img1x] = img1
 imgleft=background.copy()
 combo = imgright + imgleft
 cv2.imwrite(pathname +'combo.png', combo)
+
 # right seam
 l = 0
 x=imgleft.shape[1]
@@ -101,6 +52,7 @@ x-=1
 if imgleft[y,x]!=0:
 l+=1
 rightseam = x +20
+
 # left seam
 r = 0
 x = 0
@@ -110,19 +62,18 @@ x+=1
 if imgright[y,x]!=0:
 r+=1
 leftseam = x-20
+
 # blurr
 x2=0
 y2=0
 newx = 0
 newy=0
 newimg=(np.zeros(imgleft.shape))
+
 for x in range(0,imgleft.shape[1]):
 for y in range(0,imgleft.shape[0]):
-if x>leftseam and x<rightseam and imgleft[y,x] != 0 and imgright[y,x] !=
-0 :
-newimg[y,x] = 0.9 * ((imgright[y,x] * (x -leftseam) / (rightseam -
-leftseam)) + (imgleft[y,x] * (rightseam - x) / (rightseam - leftseam)))
-+ .05*imgleft[y,x] + .05*imgright[y,x]
+if x>leftseam and x<rightseam and imgleft[y,x] != 0 and imgright[y,x] !=0 :
+newimg[y,x] = 0.9 * ((imgright[y,x] * (x -leftseam) / (rightseam - leftseam)) + (imgleft[y,x] * (rightseam - x) / (rightseam - leftseam)))+ .05*imgleft[y,x] + .05*imgright[y,x]
 else:
 if imgleft[y,x] == 0 and imgright[y,x] != 0:
 newimg[y,x] = imgright[y,x]
@@ -130,9 +81,6 @@ if imgright[y,x] == 0 and imgleft[y,x] != 0:
 newimg[y,x] = imgleft[y,x]
 cv2.imwrite(pathname +'rio1and2.png', newimg)
 
-
-# my loop wasnt working so I just repeated the code and changed the images to add
-the 3rd
 img1 = cv2.imread(pathname +'rio1and2.png', 0)
 img2 = cv2.imread(filename3, 0)
 sift = cv2.xfeatures2d.SIFT_create()
@@ -148,6 +96,7 @@ sourcePoints = np.float32([keypoint2[m.trainIdx].pt for m in
 goodMatches ]).reshape(-1, 1, 2)
 destinationPoints = np.float32([keypoint1[m.queryIdx].pt for m in
 goodMatches ]).reshape(-1, 1, 2)
+
 # Obtain the homography matrix
 M, mask = cv2.findHomography(sourcePoints, destinationPoints, method=cv2.RANSAC,
 ransacReprojThreshold=5.0)
@@ -162,6 +111,7 @@ background[0:img1y,0:img1x] = img1
 imgleft=background.copy()
 combo2 = imgright + imgleft
 cv2.imwrite(pathname +'combo2.png', combo2)
+
 # right seam
 l = 0
 x=imgleft.shape[1]
@@ -180,6 +130,7 @@ x+=1
 if imgright[y,x]!=0:
 r+=1
 leftseam = x-20
+
 # blurr
 x2=0
 y2=0
@@ -188,14 +139,10 @@ newy=0
 newimg=(np.zeros(imgleft.shape))
 for x in range(0,imgleft.shape[1]):
 for y in range(0,imgleft.shape[0]):
-if x>leftseam and x<rightseam and imgleft[y,x] != 0 and imgright[y,x] !=
-0 :
-newimg[y,x] = 0.9 * ((imgright[y,x] * (x -leftseam) / (rightseam -
-leftseam)) + (imgleft[y,x] * (rightseam - x) / (rightseam - leftseam)))
-+ .05*imgleft[y,x] + .05*imgright[y,x]
+if x>leftseam and x<rightseam and imgleft[y,x] != 0 and imgright[y,x] != 0 :
+newimg[y,x] = 0.9 * ((imgright[y,x] * (x -leftseam) / (rightseam -leftseam)) + (imgleft[y,x] * (rightseam - x) / (rightseam - leftseam)))+ .05*imgleft[y,x] + .05*imgright[y,x]
 else:
 if imgleft[y,x] == 0 and imgright[y,x] != 0:
 newimg[y,x] = imgright[y,x]
 if imgright[y,x] == 0 and imgleft[y,x] != 0:
 newimg[y,x] = imgleft[y,x]
-cv2.imwrite(pathname +'rio1and3.png', newimg)

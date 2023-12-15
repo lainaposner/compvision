@@ -10,12 +10,14 @@ qr_c = "QR_C.png"
 qr_d = "QR_D.png"
 qr_e = "QR_E.png"
 templatemade = "templatemade.png"
+
 # Reads in images and convert to grayscale
 input1 = cv2.imread(pathname + qr_a, 0)
 input2 = cv2.imread(pathname + qr_b, 0)
 input3 = cv2.imread(pathname + qr_c, 0)
 input4 = cv2.imread(pathname + qr_d, 0)
 input5 = cv2.imread(pathname + qr_e, 0)
+
 # making og
 original1 = cv2.imread(pathname + qr_a)
 original2 = cv2.imread(pathname + qr_b)
@@ -23,31 +25,26 @@ original3 = cv2.imread(pathname + qr_c)
 original4 = cv2.imread(pathname + qr_d)
 original5 = cv2.imread(pathname + qr_e)
 # ------------------------------------------------------------------------------
-## HOW TO GO ABOUT MY CODE
-# this section you need to change the variables. i did not create a for loop
-# You need to change the variable again for affine transformation
-# thank you, have a good day!
-# hard code of images to change when testing
+
 gray = cv2.imread(pathname + qr_a, 0) # letter needs to change depending on which image
 img = input1 # number needs to change depending on which image
 original = original1 # number needs to change depending on which image
 t_img = "tempimage.png"
 template = cv2.imread(pathname + t_img, 0)
-# raytemp = cv2.cvtColor(temp_img, cv2.COLOR_BGR2GRAY)
-# --do not change -- template
+
 imagetoroi = input1
 ogtoroi = original1
-# ------------------------------------------------------------------------------
+
 # create template for matching
-# # tip: this should be an 8-bit grayscale image of just the marker
-# # 128 x 128 pixels in size
 blur = cv2.GaussianBlur(imagetoroi, (9, 9), 0)
 sharpen_kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
 sharpen = cv2.filter2D(blur, -1, sharpen_kernel)
+
 # Threshold and morph close
 thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
 kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
 close = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations=2)
+
 # Find contours and filter using threshold area
 cnts = cv2.findContours(close, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 cnts = cnts[0] if len(cnts) == 2 else cnts[1]
@@ -67,53 +64,37 @@ print((x, y), (x + w, y + h))
 cv2.imshow('image_original', original)
 imgroi = ROI.copy()
 old_image_height, old_image_width, channels = imgroi.shape
+
 # add padding to img
 new_image_width = 128
 new_image_height = 128
 color = (255, 255, 255)
 imgresult = np.full((new_image_height, new_image_width, channels), color, dtype=np.uint8)
+
 # compute center offset
 x_center = (new_image_width - old_image_width) // 2
 y_center = (new_image_height - old_image_height) // 2
 # copy image into center of result image
 imgresult[y_center:y_center + old_image_height, x_center:x_center + old_image_width] =
 imgroi
+
 # view result
 cv2.imshow("generated_template", imgresult)
 cv2.imwrite(pathname + templatemade, imgresult)
-# ------------------------------------------------------------------------------
+
+
 # find and select the three marker locations
 templateimg = cv2.imread(pathname + templatemade, 0)
 res = cv2.matchTemplate(gray, templateimg, cv2.TM_CCOEFF_NORMED)
 cv2.imshow('res',res)
-# write the res images to a disk
-# cv2.imwrite(pathname + 'resimg1.png', res)
-# cv2.imwrite(pathname + 'resimg2.png', original)
-# cv2.imwrite(pathname + 'resimg3.png', original)
-# cv2.imwrite(pathname + 'resimg4.png', original)
-# cv2.imwrite(pathname + 'resimg5.png', original)
+
 threshold = 0.8
 loc = np.where(res >= threshold)
 for pt in zip(loc[1], loc[0]):
 cv2.rectangle(original, pt, (pt[0] + w, pt[1] + h), (255, 0, 0), 2) # best working
+
 ## ANOTHER ATTEMP AT PARSING THROUGH THE MULTIPLE BOXES
-# for (x1, y1, x2, y2) in squares:
-# cv2.rectangle(original, (x1, y1), (x2, y2), (255, 0, 0), 3)
-# print('Found Location')
-# print(x1, y1, x2, y2)
-# print( pt, (pt[0] + w, pt[1] + h))
-# write the marked images to a disk
-# cv2.imwrite(pathname + 'matching1.png', original)
-# cv2.imwrite(pathname + 'matching2.png', original)
-# cv2.imwrite(pathname + 'matching3.png', original)
-# cv2.imwrite(pathname + 'matching4.png', original)
-# cv2.imwrite(pathname + 'matching5.png', original)
-# write the template matching images to a disk
-# cv2.imwrite(pathname + 'tmimg1.png', original)
-# cv2.imwrite(pathname + 'tmimg2.png', original)
-# cv2.imwrite(pathname + 'tmimg3.png', original)
-# cv2.imwrite(pathname + 'tmimg4.png', original)
-# cv2.imwrite(pathname + 'tmimg5.png', original)
+
 cv2.imshow('resultscan', original)
 #cv2.waitKey()
 print('Done')

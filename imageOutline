@@ -1,0 +1,71 @@
+# Laina Posner
+# VT, ECE 5444
+# HW 4, the Pavlidis contour extractor, the Gauss area estimation method and Discrete Curve Evolution
+import os
+import cv2
+import numpy as np
+
+# a. Load the image and convert to grayscale.
+pathname = "/Users/laina/Documents/VT/ComputerVision/hw4/"
+os.chdir(pathname) # changing directory
+png = ".png"
+filename = "hand" # filename input options: "US" , "hand"
+img_filename = filename + png
+img = cv2.imread(img_filename)
+gray_img = cv2.imread(img_filename, 0)
+
+# b. Convert to a binary image using Otsu estimate of the area.
+print("file name: ", filename)
+print("number of points: ", contour.shape)
+print("actual area: ", fillArea(contour))
+print("gauss area estimate: ", shoelace(contour))
+print()
+
+# j. Do the following eight times:
+# Call your function OnePassDCE (see below) to remove one point
+from the contour.
+# (the result is to remove half of the points from the contour).
+def dce(contour):
+y = contour[:,1]
+x = contour[:,0]
+yi = y.copy()
+yip1 = np.roll(y,-1)
+yin1 = np.roll(y,1)
+xi = x.copy()
+xip1 = np.roll(x,-1)
+xin1 = np.roll(x,1)
+leftlengthx = x - np.roll(x,1)
+leftlengthy = y - np.roll(y,1)
+rightlengthx = np.roll(x,-1) - x
+rightlengthy = np.roll(y,-1) - y
+length = np.sqrt(np.square(leftlengthx) +
+np.square(leftlengthy))
+length2 = np.sqrt(np.square(rightlengthx) +
+np.square(rightlengthy))
+th1 = np.arctan((yi-yin1)/(xi-xin1))
+th2 = np.arctan((yip1-yi)/(xip1-xi))
+theta = th1 - th2
+k = ((np.abs(theta)) * length * length2) / (length + length2)
+minnie = k.argmin()
+contour = np.delete(contour, minnie, 0)
+return contour
+newcontour = contour
+counter=0
+for i in contour:
+counter+=1
+for i in range(8):
+counter = counter/2
+counter = int(counter)
+for j in range(counter):
+contour = dce(contour)
+blackimage2 = np.zeros(imgresult.shape).astype(np.int32)
+im = cv2.polylines(blackimage2, [contour], True,
+(255,255,255), 1)
+cv2.imwrite(pathname + filename + str(i+1)
++'newcontour.png',im)
+print("# of points for img " + str(i+1) + " : ",
+contour.shape[:1])
+print("gauss area for img " + str(i+1) + " : ",
+shoelace(contour))
+print()
+cv2.waitKey(0)

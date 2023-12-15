@@ -1,0 +1,116 @@
+# Laina Posner
+# VT, ECE 5444
+# HW 3, Corner Detection
+import os
+import cv2
+import numpy as np
+
+# Load and convert image
+pathname = "/Users/laina/Documents/VT/ComputerVision/hw3/"
+os.chdir(pathname) # changing directory
+# filename input options:
+# "AllmanBrothers" , "CalvinAndHobbes" , "Chartres" , "Elvis1956"
+png = ".png"
+filename = "AllmanBrothers"
+img_filename = filename + png
+img = cv2.imread(img_filename)
+copy = cv2.imread(img_filename)
+gray_img = cv2.imread(img_filename, 0)
+gray_copy = cv2.imread(img_filename, 0)
+
+# Find top 100 key points using the OpenCV function goodFeaturesToTrack
+corners = cv2.goodFeaturesToTrack(gray_img,100,0.01,10) # (img, # of corners,
+quality, min distance between corners)
+corners = np.int0(corners)
+for i in corners:
+x,y = i.ravel()
+cv2.circle(img,(x,y),3,(0,255,0),-1) # (img, location, radius, color, fill)
+cv2.imshow('goodFeaturesToTrack',img)
+cv2.imwrite(pathname + img_filename + 'goodFeaturesToTrack.png',img)
+print("filename: " + img_filename)
+print("top 3 corners of goodFeaturesToTrack: ") # the [X,Y] coordinates of the top
+three corner points
+print(corners[:3])
+
+# Custom implementation of the Harris corner detector
+# using only numpy functions such as np.multiply(). np.minimum() and so on
+# may use two openCV functions -- cv2.GaussianBlur() and cv2.Sobel()
+# x and y gradient components
+x = cv2.Sobel(gray_copy,cv2.CV_64F,1,0,ksize=5)
+y = cv2.Sobel(gray_copy,cv2.CV_64F,0,1,ksize=5)
+# creating local structure matrix
+Ixx = x * x
+Ixy = y * x
+Iyy = y * y
+# apply gaussian smoothing
+Ixx = cv2.GaussianBlur(Ixx, (3, 3), 0)
+Ixy = cv2.GaussianBlur(Ixy, (3, 3), 0)
+Iyy = cv2.GaussianBlur(Iyy, (3, 3), 0)
+# corner strength
+k = 0.05
+det = (Ixx * Iyy) - (Ixy**2)
+trace = Ixx + Iyy
+r = det - k *(trace**2)
+# maxima
+# https://stackoverflow.com/questions/29057159/non-local-maxima-suppression-in-
+python
+def nonMaximalSupression(image,NHoodSize):
+dX, dY = NHoodSize
+M, N = image.shape
+for x in range(0,M-dX+1):
+for y in range(0,N-dY+1):
+window = image[x:x+dX, y:y+dY]
+if np.sum(window)==0:
+localMax=0
+else:
+localMax = np.amax(window)
+maxCoord=np.unravel_index(np.argmax(window), window.shape) +
+np.array((x,y))
+#suppress everything
+image[x:x+dX, y:y+dY]=0
+#reset only the max
+image[tuple(maxCoord)] = localMax
+return image
+nonMaximalSupression(r,(10,10))
+# top 100 corners
+count = 0
+row, column = r.shape[:2]
+cornerz = np.empty((3,row*column))
+for ro in range(row):
+for col in range(column):
+cornerz[:,count] = [r[ro,col],ro,col]
+count+=1
+# reverse modified array
+cornerz = np.transpose(cornerz)
+cornerz = cornerz[~np.all(cornerz == 0, axis =1)]
+cornerz = cornerz[cornerz[:,0].argsort()]
+cornerz = cornerz[-100:]
+for value in range(100):
+y= int(cornerz[value,1])
+x= int(cornerz[value,2])
+cv2.circle(copy,(x,y),3, (0,0, 255),-1) # (img, location, radius, color, fill)
+cv2.imshow('harris',copy)
+cv2.imwrite(pathname + filename + 'harris.png',copy)
+print("filename: " + filename)
+print("top 3 corners of harris: ") # the [X,Y] coordinates of the top three corner
+points
+cord = cornerz[-3:,1:] # [Start : Stop : Steps]
+print(np.flip(cord, axis = 1))
+
+# Concatenate output image horizontally and write to file
+# using concatenate() function with axis=1
+final = np.concatenate((img, copy), axis=1)
+cv2.imshow('final',final)
+cv2.imwrite(pathname + filename + 'concat.png',final)
+cv2.waitKey(0)print("filename: " + filename)
+print("top 3 corners of harris: ") # the [X,Y] coordinates of the top three corner
+points
+cord = cornerz[-3:,1:] # [Start : Stop : Steps]
+print(np.flip(cord, axis = 1))
+
+# Concatenate output image horizontally and write to file
+# using concatenate() function with axis=1
+final = np.concatenate((img, copy), axis=1)
+cv2.imshow('final',final)
+cv2.imwrite(pathname + filename + 'concat.png',final)
+cv2.waitKey(0)
